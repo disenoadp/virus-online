@@ -28,6 +28,7 @@
         .opponent.targetable { border: 2px solid #e74c3c; }
         .status { font-weight: bold; margin: 10px; }
         #messages { color: #e74c3c; font-weight: bold; height: 20px; }
+        #discardBtn { background: #7f8c8d; }
     </style>
 </head>
 <body>
@@ -59,6 +60,7 @@
         <div id="myHand" class="hand"></div>
         
         <button id="startBtn" onclick="startGame()">Iniciar Partida</button>
+        <button id="discardBtn" onclick="discardSelectedCard()" style="display:none; margin-top: 15px;">Descartar Carta</button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -140,12 +142,25 @@
             selectedCardIndex = -1;
         }
 
+        // NUEVA FUNCIÓN: Descartar
+        function discardSelectedCard() {
+            if (selectedCardIndex === -1) return alert('Selecciona una carta primero');
+            socket.emit('discardCard', {
+                roomId: currentRoom,
+                cardIndex: selectedCardIndex
+            });
+            selectedCardIndex = -1;
+        }
+
         function renderGame() {
             if (!gameState) return;
             const me = gameState.players.find(p => p.id === myId);
             const isMyTurn = gameState.players[gameState.turn].id === myId;
             
             document.getElementById('turnDisplay').innerText = isMyTurn ? "TI" : gameState.players[gameState.turn].name;
+
+            // Mostrar botón de descartar solo si es mi turno
+            document.getElementById('discardBtn').style.display = isMyTurn ? 'inline-block' : 'none';
 
             const opponentsDiv = document.getElementById('opponents');
             opponentsDiv.innerHTML = '';
