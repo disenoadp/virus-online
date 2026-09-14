@@ -16,21 +16,13 @@ function createDeck() {
     const deck = [];
     
     colors.forEach(color => {
-        for (let i = 0; i < 4; i++) {
-            deck.push({ type: 'organ', color: color });
-        }
+        for (let i = 0; i < 4; i++) deck.push({ type: 'organ', color: color });
     });
-    
     colors.forEach(color => {
-        for (let i = 0; i < 2; i++) {
-            deck.push({ type: 'virus', color: color });
-        }
+        for (let i = 0; i < 2; i++) deck.push({ type: 'virus', color: color });
     });
-
     colors.forEach(color => {
-        for (let i = 0; i < 2; i++) {
-            deck.push({ type: 'medicine', color: color });
-        }
+        for (let i = 0; i < 2; i++) deck.push({ type: 'medicine', color: color });
     });
 
     for (let i = deck.length - 1; i > 0; i--) {
@@ -90,7 +82,6 @@ io.on('connection', (socket) => {
 
         const player = game.players[playerIndex];
         const card = player.hand[cardIndex];
-
         if (!card) return;
 
         if (card.type === 'organ') {
@@ -120,10 +111,28 @@ io.on('connection', (socket) => {
             player.hand.splice(cardIndex, 1);
         }
 
-        if (game.deck.length > 0) {
-            player.hand.push(game.deck.pop());
-        }
+        if (game.deck.length > 0) player.hand.push(game.deck.pop());
 
+        game.turn = (game.turn + 1) % game.players.length;
+        io.to(roomId).emit('updateState', game);
+    });
+
+    // NUEVA FUNCIÓN: Descartar carta
+    socket.on('discardCard', ({ roomId, cardIndex }) => {
+        const game = games[roomId];
+        if (!game) return;
+        
+        const playerIndex = game.players.findIndex(p => p.id === socket.id);
+        if (playerIndex !== game.turn) return; // No es tu turno
+
+        const player = game.players[playerIndex];
+        if (cardIndex < 0 || cardIndex >= player.hand.length) return;
+
+        // Eliminar la carta y robar una nueva
+        player.hand.splice(cardIndex, 1);
+        if (game.deck.length > 0) player.hand.push(game.deck.pop());
+
+        // Pasar turno
         game.turn = (game.turn + 1) % game.players.length;
         io.to(roomId).emit('updateState', game);
     });
