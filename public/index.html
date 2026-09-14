@@ -5,35 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VIRUS Online</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f0f0f0; margin: 0; padding: 20px; text-align: center; }
-        #lobby { background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        input, button { padding: 10px; margin: 5px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; cursor: pointer;}
-        button { background: #ff4757; color: white; border: none; }
-        button:hover { background: #e04046; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        #game { display: none; margin-top: 20px; }
-        .player { background: white; padding: 15px; border-radius: 10px; margin: 10px auto; max-width: 500px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);}
-        .hand { display: flex; justify-content: center; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
-        .card { width: 80px; height: 120px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; border: 3px solid transparent; font-size: 12px; }
-        .card:hover { border-color: #333; }
-        .card.selected { border-color: #2ecc71; transform: scale(1.1); }
-        .red { background-color: #e74c3c; }
-        .blue { background-color: #3498db; }
-        .green { background-color: #2ecc71; }
-        .yellow { background-color: #f1c40f; color: black; }
-        .purple { background-color: #9b59b6; }
-        .organ { border: 2px solid #2c3e50; }
-        .virus { border: 2px dashed #c0392b; }
-        .medicine { border: 2px solid #27ae60; }
-        .treatment { background-color: #9b59b6; border: 2px solid #8e44ad; }
-        #opponents { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
-        .opponent { background: #dfe6e9; padding: 10px; border-radius: 8px; cursor: pointer; }
-        .opponent.targetable { border: 2px solid #e74c3c; }
-        .opponent.disabled { opacity: 0.5; pointer-events: none; }
-        .status { font-weight: bold; margin: 10px; font-size: 18px; }
-        #messages { color: #e74c3c; font-weight: bold; height: 20px; margin-bottom: 15px; }
+        :root {
+            --bg: #1a1a2e;
+            --card-bg: #16213e;
+            --accent: #e94560;
+            --text: #eee;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; text-align: center; background-image: linear-gradient(rgba(26, 26, 46, 0.9), rgba(26, 26, 46, 0.9)), url('https://images.unsplash.com/photo-1530026405446-e6f5e2e935cb?auto=format&fit=crop&w=1400&q=80'); background-size: cover; }
+        h1, h3 { color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        #lobby { background: var(--card-bg); padding: 30px; border-radius: 15px; display: inline-block; box-shadow: 0 10px 20px rgba(0,0,0,0.5); margin-top: 50px; border: 1px solid #333; }
+        input { padding: 12px; margin: 5px; font-size: 16px; border-radius: 5px; border: 1px solid #555; background: #0f3460; color: #fff; }
+        button { padding: 12px 20px; margin: 5px; font-size: 16px; border-radius: 5px; border: none; cursor: pointer; background: var(--accent); color: #fff; font-weight: bold; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        button:hover { background: #ff2e63; transform: translateY(-2px); }
+        button:disabled { background: #555; cursor: not-allowed; transform: none; }
+        #game { display: none; margin-top: 20px; max-width: 1200px; margin-left: auto; margin-right: auto; }
+        .hand { display: flex; justify-content: center; gap: 15px; margin-top: 15px; flex-wrap: wrap; }
+        .card { width: 100px; height: 140px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-direction: column; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; border: 3px solid transparent; font-size: 14px; box-shadow: 0 5px 10px rgba(0,0,0,0.5); transition: all 0.2s; position: relative; overflow: hidden; }
+        .card:hover { transform: translateY(-5px); border-color: #fff; }
+        .card.selected { border-color: #2ecc71; box-shadow: 0 0 15px #2ecc71; transform: translateY(-10px) scale(1.05); }
+        .card-icon { font-size: 40px; margin-bottom: 5px; }
+        .red { background-color: #c0392b; }
+        .blue { background-color: #2980b9; }
+        .green { background-color: #27ae60; }
+        .yellow { background-color: #f39c12; }
+        .purple { background-color: #8e44ad; }
+        .organ { border-bottom: 5px solid #ecf0f1; }
+        .virus { border-bottom: 5px dashed #c0392b; }
+        .medicine { border-bottom: 5px solid #27ae60; }
+        .treatment { background-color: #8e44ad; border-bottom: 5px solid #f1c40f; }
+        #opponents { display: flex; justify-content: center; gap: 25px; flex-wrap: wrap; margin-bottom: 30px; }
+        .opponent { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; border: 2px solid transparent; transition: 0.2s; }
+        .opponent.targetable { border-color: var(--accent); box-shadow: 0 0 10px var(--accent); cursor: pointer; }
+        .opponent.disabled { opacity: 0.4; pointer-events: none; }
+        .status { font-weight: bold; margin: 10px; font-size: 20px; color: #2ecc71; }
+        #messages { color: #f1c40f; font-weight: bold; height: 30px; margin-bottom: 15px; font-size: 18px; text-shadow: 1px 1px 2px black; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; max-width: 600px; margin-left: auto; margin-right: auto; }
         #discardBtn { background: #7f8c8d; }
-        #winnerScreen { display: none; font-size: 40px; color: #2ecc71; font-weight: bold; margin-top: 50px; }
+        #winnerScreen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; flex-direction: column; justify-content: center; align-items: center; }
+        #winnerScreen h1 { font-size: 50px; color: #2ecc71; margin-bottom: 30px; }
+        .my-organ-card { width: 60px; height: 80px; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -55,20 +64,24 @@
         <div class="status">Sala: <span id="roomIdDisplay"></span> | Turno de: <span id="turnDisplay"></span></div>
         <div id="messages"></div>
         
-        <h3>Rivales</h3>
+        <h3>🧪 Rivales 🧪</h3>
         <div id="opponents"></div>
 
-        <h3>Tu Cuerpo (Órganos)</h3>
+        <h3>🫀 Tu Cuerpo (Órganos) 🫀</h3>
         <div id="myOrgans" class="hand" style="min-height: 130px;"></div>
 
-        <h3>Tu Mano</h3>
+        <h3>🃏 Tu Mano 🃏</h3>
         <div id="myHand" class="hand"></div>
         
         <button id="startBtn" onclick="startGame()">Iniciar Partida</button>
-        <button id="discardBtn" onclick="discardSelectedCard()" style="display:none; margin-top: 15px;">Descartar Carta</button>
+        <button id="discardBtn" onclick="discardSelectedCard()" style="display:none;">🗑️ Descartar Carta</button>
     </div>
 
-    <div id="winnerScreen">🎉 ¡GANA <span id="winnerName"></span>! 🎉</div>
+    <div id="winnerScreen">
+        <h1>🎉 ¡GANA <span id="winnerName"></span>! 🎉</h1>
+        <button onclick="restartGame()">🔄 Volver a Jugar</button>
+        <button onclick="goHome()" style="background: #7f8c8d;">🏠 Ir al Inicio</button>
+    </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -78,9 +91,14 @@
         let selectedCardIndex = -1;
         let gameState = null;
         
-        // Variables para tratamientos multi-paso
         let treatmentStep = 0;
         let treatmentData = {};
+
+        const cardIcons = {
+            red: '🟥', blue: '🟦', green: '🟩', yellow: '🟨',
+            organ: '🫀', virus: '🦠', medicine: '💊',
+            transplant: '🔄', thief: '🥷', contagion: '☣️', latex: '🧤', medical_error: '🔀'
+        };
 
         socket.on('connect', () => { myId = socket.id; });
 
@@ -105,8 +123,10 @@
         });
 
         socket.on('errorMessage', (msg) => {
-            document.getElementById('messages').innerText = msg;
-            setTimeout(() => { document.getElementById('messages').innerText = ''; }, 3000);
+            document.getElementById('messages').innerText = "⚠️ " + msg;
+            setTimeout(() => { 
+                if(document.getElementById('messages').innerText.includes(msg)) document.getElementById('messages').innerText = ''; 
+            }, 3000);
         });
 
         function createGame() {
@@ -127,6 +147,15 @@
             document.getElementById('startBtn').style.display = 'none';
         }
 
+        function restartGame() {
+            socket.emit('restartGame', currentRoom);
+            document.getElementById('winnerScreen').style.display = 'none';
+        }
+
+        function goHome() {
+            window.location.reload();
+        }
+
         function resetSelection() {
             selectedCardIndex = -1;
             treatmentStep = 0;
@@ -141,25 +170,21 @@
             selectedCardIndex = index;
             const card = gameState.players.find(p => p.id === myId).hand[index];
             
-            // Configurar pasos para tratamientos
             if (card.type === 'treatment') {
                 treatmentStep = 1;
-                if (card.subtype === 'transplant' || card.subtype === 'contagion') {
-                    // Necesita selección de mi órgano primero
-                } else {
-                    treatmentStep = 2; // Va directo a seleccionar rival
+                if (card.subtype !== 'transplant' && card.subtype !== 'contagion') {
+                    treatmentStep = 2;
                 }
             }
             renderGame();
         }
 
         function discardSelectedCard() {
-            if (selectedCardIndex === -1) return alert('Selecciona una carta primero');
+            if (selectedCardIndex === -1) return;
             socket.emit('discardCard', { roomId: currentRoom, cardIndex: selectedCardIndex });
             resetSelection();
         }
 
-        // Lógica de clics en órganos y rivales
         function handleMyOrganClick(color) {
             const card = gameState.players.find(p => p.id === myId).hand[selectedCardIndex];
             if (card.type === 'treatment' && treatmentStep === 1) {
@@ -176,7 +201,7 @@
                         treatmentStep = 2;
                         renderGame();
                     } else {
-                        alert('Ese órgano no está infectado');
+                        alert('Debes seleccionar un órgano tuyo INFECTADO.');
                     }
                 }
             }
@@ -186,16 +211,14 @@
             const card = gameState.players.find(p => p.id === myId).hand[selectedCardIndex];
             if (!card) return;
 
-            // Virus o Medicina directa
             if (card.type === 'virus' || card.type === 'medicine') {
                 socket.emit('playCard', {
                     roomId: currentRoom,
                     cardIndex: selectedCardIndex,
-                    actionData: { targetId: targetId, targetColor: targetColor } // targetColor helps validation server-side if needed, though server finds by color
+                    actionData: { targetId: targetId, targetColor: targetColor }
                 });
                 resetSelection();
             }
-            // Tratamientos paso final
             else if (card.type === 'treatment' && treatmentStep === 2) {
                 treatmentData.targetId = targetId;
                 treatmentData.targetColor = targetColor;
@@ -222,7 +245,7 @@
             
             if (gameState.over) {
                 document.getElementById('game').style.display = 'none';
-                document.getElementById('winnerScreen').style.display = 'block';
+                document.getElementById('winnerScreen').style.display = 'flex';
                 document.getElementById('winnerName').innerText = gameState.winner;
                 return;
             }
@@ -230,22 +253,24 @@
             const me = gameState.players.find(p => p.id === myId);
             const isMyTurn = gameState.players[gameState.turn].id === myId;
             
-            document.getElementById('turnDisplay').innerText = isMyTurn ? "TI" : gameState.players[gameState.turn].name;
+            document.getElementById('turnDisplay').innerText = isMyTurn ? "TI ⬅️" : gameState.players[gameState.turn].name;
             document.getElementById('discardBtn').style.display = isMyTurn ? 'inline-block' : 'none';
 
             let statusMsg = '';
             if (selectedCardIndex !== -1 && isMyTurn) {
                 const card = me.hand[selectedCardIndex];
-                if (card.type === 'organ') statusMsg = 'Haz doble clic en tu área de órganos para colocarlo.';
-                else if (card.type === 'virus') statusMsg = 'Selecciona el órgano infectar/destruir del rival.';
-                else if (card.type === 'medicine') statusMsg = 'Selecciona TU órgano infectado para curarlo.';
+                if (card.type === 'organ') statusMsg = ' Haz doble clic en un espacio vacío de tu cuerpo para colocar el órgano.';
+                else if (card.type === 'virus') statusMsg = '🦠 Selecciona el órgano del rival. (Lo infecta si está sano, lo DESTRUYE si ya está infectado).';
+                else if (card.type === 'medicine') statusMsg = '💊 Selecciona uno de TUS órganos infectados para curarlo.';
                 else if (card.type === 'treatment') {
-                    if (card.subtype === 'transplant') statusMsg = treatmentStep === 1 ? 'Selecciona TU órgano a intercambiar.' : 'Selecciona el órgano del RIVAL.';
-                    else if (card.subtype === 'thief') statusMsg = 'Selecciona el órgano del RIVAL a robar.';
-                    else if (card.subtype === 'contagion') statusMsg = treatmentStep === 1 ? 'Selecciona TU órgano infectado.' : 'Selecciona el órgano sano del RIVAL del mismo color.';
-                    else if (card.subtype === 'latex') statusMsg = 'Haz clic en cualquier rival para aplicar el efecto.';
-                    else if (card.subtype === 'medical_error') statusMsg = 'Haz clic en el RIVAL con el que quieres intercambiar todo el cuerpo.';
+                    if (card.subtype === 'transplant') statusMsg = treatmentStep === 1 ? '🔄 1/2: Selecciona TU órgano a intercambiar.' : '🔄 2/2: Selecciona el órgano del RIVAL.';
+                    else if (card.subtype === 'thief') statusMsg = '🥷 Selecciona el órgano del RIVAL para robarlo y añadirlo a tu cuerpo.';
+                    else if (card.subtype === 'contagion') statusMsg = treatmentStep === 1 ? '☣️ 1/2: Selecciona TU órgano infectado.' : '☣️ 2/2: Selecciona el órgano del RIVAL del mismo color para contagiarlo.';
+                    else if (card.subtype === 'latex') statusMsg = '🧤 Haz clic en CUALQUIER rival. Descartarán su mano y robarán 3 cartas nuevas.';
+                    else if (card.subtype === 'medical_error') statusMsg = '🔀 Haz clic en un RIVAL para intercambiar todos tus órganos por los suyos.';
                 }
+            } else if (!isMyTurn) {
+                statusMsg = "Espera tu turno...";
             }
             document.getElementById('messages').innerText = statusMsg;
 
@@ -255,25 +280,24 @@
                 if (p.id !== myId) {
                     const div = document.createElement('div');
                     div.className = 'opponent';
-                    let organsHtml = p.organs.map(o => `<div class="card ${o.color} ${o.infected ? 'virus' : 'organ'}" style="width:40px; height:60px; font-size:10px;">${o.infected ? 'V' : 'O'}</div>`).join('');
-                    div.innerHTML = `<strong>${p.name}</strong> (${p.hand.length} cartas)<br><div style="display:flex; gap:5px;">${organsHtml}</div>`;
+                    let organsHtml = p.organs.map(o => `<div class="card ${o.color} ${o.infected ? 'virus' : 'organ'}" style="width:40px; height:60px; font-size:10px;">${o.infected ? '🦠' : '🫀'}</div>`).join('');
+                    div.innerHTML = `<strong>${p.name}</strong> (${p.hand.length}🃏)<br><div style="display:flex; gap:5px;">${organsHtml}</div>`;
                     
                     if (selectedCardIndex !== -1 && isMyTurn) {
                         const card = me.hand[selectedCardIndex];
                         if ((card.type === 'virus' || card.type === 'medicine' || (card.type === 'treatment' && treatmentStep === 2)) ) {
-                            // Resaltar órganos válidos
                             const targetOrgans = div.querySelectorAll('.card');
                             targetOrgans.forEach((orgDiv, idx) => {
                                 const organ = p.organs[idx];
                                 let isValid = false;
-                                if (card.type === 'virus') isValid = true; // Cualquiera
-                                if (card.type === 'medicine') isValid = false; // Medicina no aplica a rivales en clásico
+                                if (card.type === 'virus') isValid = true;
                                 if (card.subtype === 'thief') isValid = true;
                                 if (card.subtype === 'transplant' || card.subtype === 'contagion') isValid = (organ.color === treatmentData.myColor);
                                 
                                 if (isValid) {
                                     orgDiv.style.cursor = 'pointer';
-                                    orgDiv.style.border = '3px solid #e74c3c';
+                                    orgDiv.style.border = '3px solid #e94560';
+                                    orgDiv.style.boxShadow = '0 0 10px #e94560';
                                     orgDiv.onclick = () => handleOpponentOrganClick(p.id, organ.color);
                                 }
                             });
@@ -294,22 +318,24 @@
             myOrgansDiv.innerHTML = '';
             me.organs.forEach(o => {
                 const card = document.createElement('div');
-                card.className = `card ${o.color} ${o.infected ? 'virus' : 'organ'}`;
-                card.innerText = o.infected ? 'Infectado' : 'Sano';
+                card.className = `card my-organ-card ${o.color} ${o.infected ? 'virus' : 'organ'}`;
+                card.innerHTML = `<span class="card-icon">${o.infected ? '🦠' : '🫀'}</span>`;
                 if (selectedCardIndex !== -1 && isMyTurn) {
                     const selCard = me.hand[selectedCardIndex];
                     if (selCard.type === 'medicine' && o.infected) {
                         card.style.cursor = 'pointer';
-                        card.style.border = '3px solid #27ae60';
+                        card.style.border = '3px solid #2ecc71';
+                        card.style.boxShadow = '0 0 10px #2ecc71';
                         card.onclick = () => {
                             socket.emit('playCard', { roomId: currentRoom, cardIndex: selectedCardIndex, actionData: { targetId: myId, targetColor: o.color } });
                             resetSelection();
                         };
                     }
                     if (selCard.type === 'treatment' && treatmentStep === 1 && (selCard.subtype === 'transplant' || selCard.subtype === 'contagion')) {
-                        if (selCard.subtype === 'contagion' && !o.infected) return; // Solo infectados
+                        if (selCard.subtype === 'contagion' && !o.infected) return;
                         card.style.cursor = 'pointer';
                         card.style.border = '3px solid #2ecc71';
+                        card.style.boxShadow = '0 0 10px #2ecc71';
                         card.onclick = () => handleMyOrganClick(o.color);
                     }
                 }
@@ -322,10 +348,15 @@
                 const card = document.createElement('div');
                 card.className = `card ${c.color || 'purple'} ${c.type}`;
                 let displayText = c.type;
+                let icon = c.color ? cardIcons[c.color] : '';
                 if (c.type === 'treatment') {
                     displayText = c.subtype.replace('treatment_', '');
-                }
-                card.innerText = displayText;
+                    icon = cardIcons[c.subtype] || '⚙️';
+                } else if (c.type === 'organ') icon = '🫀';
+                else if (c.type === 'virus') icon = '🦠';
+                else if (c.type === 'medicine') icon = '💊';
+                
+                card.innerHTML = `<span class="card-icon">${icon}</span><span>${displayText}</span>`;
                 if (index === selectedCardIndex) card.classList.add('selected');
                 
                 if (isMyTurn) {
