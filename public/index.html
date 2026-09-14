@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIRUS Online</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f0f0f0; margin: 0; padding: 20px; text-align: center; }
+        #lobby { background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        input, button { padding: 10px; margin: 5px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; cursor: pointer;}
+        button { background: #ff4757; color: white; border: none; }
+        button:hover { background: #e04046; }
+        #game { display: none; margin-top: 20px; }
+        .player { background: white; padding: 15px; border-radius: 10px; margin: 10px auto; max-width: 500px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);}
+        .hand { display: flex; justify-content: center; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+        .card { width: 80px; height: 120px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; border: 3px solid transparent; }
+        .card:hover { border-color: #333; }
+        .card.selected { border-color: #2ecc71; transform: scale(1.1); }
+        .red { background-color: #e74c3c; }
+        .blue { background-color: #3498db; }
+        .green { background-color: #2ecc71; }
+        .yellow { background-color: #f1c40f; color: black; }
+        .organ { border: 2px solid #2c3e50; }
+        .virus { border: 2px dashed #c0392b; }
+        .medicine { border: 2px solid #27ae60; }
+        #opponents { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+        .opponent { background: #dfe6e9; padding: 10px; border-radius: 8px; cursor: pointer; }
+        .opponent.targetable { border: 2px solid #e74c3c; }
+        .status { font-weight: bold; margin: 10px; }
+        #messages { color: #e74c3c; font-weight: bold; height: 20px; }
+    </style>
+</head>
+<body>
+
+    <div id="lobby">
+        <h1>🦠 VIRUS Online 🦠</h1>
+        <div>
+            <input type="text" id="playerName" placeholder="Tu nombre">
+        </div>
+        <div>
+            <button onclick="createGame()">Crear Sala</button>
+            <input type="text" id="roomIdInput" placeholder="Código de sala">
+            <button onclick="joinGame()">Unirse</button>
+        </div>
+    </div>
+
+    <div id="game">
+        <h1>🦠 VIRUS 🦠</h1>
+        <div class="status">Sala: <span id="roomIdDisplay"></span> | Turno de: <span id="turnDisplay"></span></div>
+        <div id="messages"></div>
+        
+        <h3>Rivales</h3>
+        <div id="opponents"></div>
+
+        <h3>Tu Cuerpo (Órganos)</h3>
+        <div id="myOrgans" class="hand" style="min-height: 130px;"></div>
+
+        <h3>Tu Mano</h3>
+        <div id="myHand" class="hand"></div>
+        
+        <button id="startBtn" onclick="startGame()">Iniciar Partida</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let myId = '';
+        let currentRoom = '';
+        let selectedCardIndex = -1;
+        let gameState = null;
+
+        socket.on('connect', () => { myId = socket.id; });
+
+        socket.on('gameCreated', (roomId) => {
+            currentRoom = roomId;
+            document.getElementById('roomIdDisplay').innerText = roomId;
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+        });
+
+        socket.on('gameJoined', (roomId) => {
+            currentRoom = roomId;
+            document.getElementById('roomIdDisplay').innerText = roomId;
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            document.getElementById('startBtn').style.display = 'none'; 
+        });
+
+        socket.on('updateState', (state) => {
+            gameState = state;
+            renderGame();
+        });
+
+        socket.on('errorMessage', (msg) => {
+            const msgDiv = document.getElementById('messages');
+            msgDiv.innerText = msg;
+            setTimeout(() => msgDiv.innerText = '', 3000);
+        });
+
+        function createGame() {
+            const name = document.getElementById('playerName').value;
+            if(!name) return alert('Pon tu nombre');
+            socket.emit('createGame', name);
+        }
+
+        function joinGame() {
+            const name = document.getElementById('playerName').value;
+            const roomId = document.getElementById('roomIdInput').value;
+            if(!name || !roomId) return alert('Faltan datos');
+            socket.emit('joinGame', { roomId, playerName: name });
+        }
+
+        function startGame() {
+            socket.emit('startGame', currentRoom);
+            document.getElementById('startBtn').style.display = 'none';
+        }
+
+        function selectCard(index) {
+            if (gameState.players[gameState.turn].id !== myId) return;
+            selectedCardIndex = index;
+            renderGame();
+        }
+
+        function playCard(targetId = null) {
+            if (selectedCardIndex === -1) return;
+            const card = gameState.players.find(p => p.id === myId).hand[selectedCardIndex];
+            
+            let targetType = 'self';
+            if (card.type !== 'organ') {
+                if (!targetId) return;
+                targetType = 'attack';
+            }
+
+            socket.emit('playCard', {
+                roomId: currentRoom,
+                cardIndex: selectedCardIndex,
+                targetType: targetType,
+                targetId: targetId
+            });
+            selectedCardIndex = -1;
+        }
+
+        function renderGame() {
+            if (!gameState) return;
+            const me = gameState.players.find(p => p.id === myId);
+            const isMyTurn = gameState.players[gameState.turn].id === myId;
+            
+            document.getElementById('turnDisplay').innerText = isMyTurn ? "TI" : gameState.players[gameState.turn].name;
+
+            const opponentsDiv = document.getElementById('opponents');
+            opponentsDiv.innerHTML = '';
+            gameState.players.forEach(p => {
+                if (p.id !== myId) {
+                    const div = document.createElement('div');
+                    div.className = 'opponent';
+                    let organsHtml = p.organs.map(o => `<div class="card ${o.color} ${o.infected ? 'virus' : 'organ'}" style="width:40px; height:60px; font-size:10px;">${o.infected ? 'V' : 'O'}</div>`).join('');
+                    div.innerHTML = `<strong>${p.name}</strong> (${p.hand.length} cartas)<br><div style="display:flex; gap:5px;">${organsHtml}</div>`;
+                    
+                    if (selectedCardIndex !== -1 && isMyTurn) {
+                        div.style.cursor = 'pointer';
+                        const selectedCard = me.hand[selectedCardIndex];
+                        if(p.organs.some(o => o.color === selectedCard.color)) {
+                            div.classList.add('targetable');
+                            div.onclick = () => playCard(p.id);
+                        }
+                    }
+                    opponentsDiv.appendChild(div);
+                }
+            });
+
+            const myOrgansDiv = document.getElementById('myOrgans');
+            myOrgansDiv.innerHTML = '';
+            me.organs.forEach(o => {
+                const card = document.createElement('div');
+                card.className = `card ${o.color} ${o.infected ? 'virus' : 'organ'}`;
+                card.innerText = o.infected ? 'Infectado' : 'Sano';
+                myOrgansDiv.appendChild(card);
+            });
+
+            const myHandDiv = document.getElementById('myHand');
+            myHandDiv.innerHTML = '';
+            me.hand.forEach((c, index) => {
+                const card = document.createElement('div');
+                card.className = `card ${c.color} ${c.type}`;
+                card.innerText = c.type;
+                if (index === selectedCardIndex) card.classList.add('selected');
+                
+                if (isMyTurn) {
+                    card.onclick = () => selectCard(index);
+                    if (c.type === 'organ') {
+                        card.ondblclick = () => playCard();
+                    }
+                }
+                myHandDiv.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>
