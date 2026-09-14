@@ -95,7 +95,7 @@
         let treatmentData = {};
 
         const cardIcons = {
-            red: '🟥', blue: '🟦', green: '🟩', yellow: '🟨',
+            red: '🫀', blue: '🧠', green: '🫁', yellow: '🦴',
             organ: '🫀', virus: '🦠', medicine: '💊',
             transplant: '🔄', thief: '🥷', contagion: '☣️', latex: '🧤', medical_error: '🔀'
         };
@@ -172,6 +172,7 @@
             
             if (card.type === 'treatment') {
                 treatmentStep = 1;
+                treatmentData.type = 'treatment_' + card.subtype; // FIX PARA LADRÓN
                 if (card.subtype !== 'transplant' && card.subtype !== 'contagion') {
                     treatmentStep = 2;
                 }
@@ -190,14 +191,12 @@
             if (card.type === 'treatment' && treatmentStep === 1) {
                 if (card.subtype === 'transplant') {
                     treatmentData.myColor = color;
-                    treatmentData.type = 'treatment_transplant';
                     treatmentStep = 2;
                     renderGame();
                 } else if (card.subtype === 'contagion') {
                     const myOrgan = gameState.players.find(p => p.id === myId).organs.find(o => o.color === color);
                     if (myOrgan && myOrgan.infected) {
                         treatmentData.myColor = color;
-                        treatmentData.type = 'treatment_contagion';
                         treatmentStep = 2;
                         renderGame();
                     } else {
@@ -280,7 +279,7 @@
                 if (p.id !== myId) {
                     const div = document.createElement('div');
                     div.className = 'opponent';
-                    let organsHtml = p.organs.map(o => `<div class="card ${o.color} ${o.infected ? 'virus' : 'organ'}" style="width:40px; height:60px; font-size:10px;">${o.infected ? '🦠' : '🫀'}</div>`).join('');
+                    let organsHtml = p.organs.map(o => `<div class="card ${o.color} ${o.infected ? 'virus' : 'organ'}" style="width:40px; height:60px; font-size:10px;">${o.infected ? '🦠' : cardIcons[o.color]}</div>`).join('');
                     div.innerHTML = `<strong>${p.name}</strong> (${p.hand.length}🃏)<br><div style="display:flex; gap:5px;">${organsHtml}</div>`;
                     
                     if (selectedCardIndex !== -1 && isMyTurn) {
@@ -319,7 +318,7 @@
             me.organs.forEach(o => {
                 const card = document.createElement('div');
                 card.className = `card my-organ-card ${o.color} ${o.infected ? 'virus' : 'organ'}`;
-                card.innerHTML = `<span class="card-icon">${o.infected ? '🦠' : '🫀'}</span>`;
+                card.innerHTML = `<span class="card-icon">${o.infected ? '🦠' : cardIcons[o.color]}</span>`;
                 if (selectedCardIndex !== -1 && isMyTurn) {
                     const selCard = me.hand[selectedCardIndex];
                     if (selCard.type === 'medicine' && o.infected) {
@@ -352,7 +351,7 @@
                 if (c.type === 'treatment') {
                     displayText = c.subtype.replace('treatment_', '');
                     icon = cardIcons[c.subtype] || '⚙️';
-                } else if (c.type === 'organ') icon = '🫀';
+                } else if (c.type === 'organ') icon = cardIcons[c.color];
                 else if (c.type === 'virus') icon = '🦠';
                 else if (c.type === 'medicine') icon = '💊';
                 
