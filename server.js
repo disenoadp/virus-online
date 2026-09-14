@@ -15,24 +15,19 @@ function createDeck() {
     const colors = ['red', 'blue', 'green', 'yellow'];
     const deck = [];
     
-    // 4 Órganos de cada color
     colors.forEach(color => {
         for (let i = 0; i < 4; i++) deck.push({ type: 'organ', color: color });
     });
-    // 4 Virus de cada color
     colors.forEach(color => {
         for (let i = 0; i < 4; i++) deck.push({ type: 'virus', color: color });
     });
-    // 4 Medicinas de cada color
     colors.forEach(color => {
         for (let i = 0; i < 4; i++) deck.push({ type: 'medicine', color: color });
     });
     
-    // Cartas de Tratamiento (1 de cada una)
     const treatments = ['transplant', 'thief', 'contagion', 'latex', 'medical_error'];
     treatments.forEach(t => deck.push({ type: 'treatment', subtype: t }));
 
-    // Barajar
     for (let i = deck.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [deck[i], deck[j]] = [deck[j], deck[i]];
@@ -84,10 +79,31 @@ io.on('connection', (socket) => {
         if (!game || game.players.length < 2) return;
         
         game.started = true;
+        game.over = false;
+        game.winner = null;
         game.players.forEach(player => {
+            player.hand = [];
+            player.organs = [];
             for (let i = 0; i < 3; i++) {
                 if (game.deck.length > 0) player.hand.push(game.deck.pop());
             }
+        });
+        io.to(roomId).emit('updateState', game);
+    });
+
+    // NUEVO: Reiniciar partida manteniendo la sala
+    socket.on('restartGame', (roomId) => {
+        const game = games[roomId];
+        if (!game) return;
+        game.deck = createDeck();
+        game.over = false;
+        game.winner = null;
+        game.turn = 0;
+        game.started = true;
+        game.players.forEach(p => {
+            p.hand = [];
+            p.organs = [];
+            for(let i=0; i<3; i++) if(game.deck.length) p.hand.push(game.deck.pop());
         });
         io.to(roomId).emit('updateState', game);
     });
@@ -105,14 +121,12 @@ io.on('connection', (socket) => {
 
         let cardPlayed = false;
 
-        // LÓGICA ÓRGANO
         if (card.type === 'organ') {
             if (player.organs.length >= 4) return socket.emit('errorMessage', 'Ya tienes 4 órganos.');
             if (player.organs.some(o => o.color === card.color)) return socket.emit('errorMessage', 'Ya tienes un órgano de ese color.');
             player.organs.push({ color: card.color, infected: false });
             cardPlayed = true;
         } 
-        // LÓGICA VIRUS Y MEDICINA
         else if (card.type === 'virus' || card.type === 'medicine') {
             const targetPlayer = game.players.find(p => p.id === actionData.targetId);
             if (!targetPlayer) return;
@@ -127,16 +141,14 @@ io.on('connection', (socket) => {
             }
             cardPlayed = true;
         } 
-        // LÓGICA TRATAMIENTOS
         else if (card.type === 'treatment') {
             switch(actionData.type) {
                 case 'treatment_transplant':
-                    const me = player;
                     const targetT = game.players.find(p => p.id === actionData.targetId);
-                    const myOrgan = me.organs.find(o => o.color === actionData.myColor);
+                    const myOrgan = player.organs.find(o => o.color === actionData.myColor);
                     const theirOrgan = targetT.organs.find(o => o.color === actionData.targetColor);
                     if (myOrgan && theirOrgan) {
-                        me.organs = me.organs.map(o => o === myOrgan ? theirOrgan : o);
+                        player.organs = player.organs.map(o => o === myOrgan ? theirOrgan : o);
                         targetT.organs = targetT.organs.map(o => o === theirOrgan ? myOrgan : o);
                         cardPlayed = true;
                     }
@@ -145,7 +157,7 @@ io.on('connection', (socket) => {
                     const targetThief = game.players.find(p => p.id === actionData.targetId);
                     const organToSteal = targetThief.organs.find(o => o.color === actionData.targetColor);
                     if (organToSteal && !player.organs.some(o => o.color === organToSteal.color) && player.organs.length < 4) {
-                        organToSteal.infected = false; // Se limpia al robar
+                        organToSteal.infected = false; 
                         player.organs.push(organToSteal);
                         targetThief.organs = targetThief.organs.filter(o => o !== organToSteal);
                         cardPlayed = true;
@@ -192,7 +204,6 @@ io.on('connection', (socket) => {
             player.hand.splice(cardIndex, 1);
             if (game.deck.length > 0) player.hand.push(game.deck.pop());
 
-            // Comprobar victoria
             if (checkWin(player)) {
                 game.over = true;
                 game.winner = player.name;
