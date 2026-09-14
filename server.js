@@ -91,7 +91,6 @@ io.on('connection', (socket) => {
         io.to(roomId).emit('updateState', game);
     });
 
-    // NUEVO: Reiniciar partida manteniendo la sala
     socket.on('restartGame', (roomId) => {
         const game = games[roomId];
         if (!game) return;
@@ -129,7 +128,7 @@ io.on('connection', (socket) => {
         } 
         else if (card.type === 'virus' || card.type === 'medicine') {
             const targetPlayer = game.players.find(p => p.id === actionData.targetId);
-            if (!targetPlayer) return;
+            if (!targetPlayer) return socket.emit('errorMessage', 'Jugador no encontrado.');
             const targetOrgan = targetPlayer.organs.find(o => o.color === card.color);
             if (!targetOrgan) return socket.emit('errorMessage', 'El objetivo no tiene ese órgano.');
 
@@ -146,48 +145,54 @@ io.on('connection', (socket) => {
                 case 'treatment_transplant':
                     const targetT = game.players.find(p => p.id === actionData.targetId);
                     const myOrgan = player.organs.find(o => o.color === actionData.myColor);
-                    const theirOrgan = targetT.organs.find(o => o.color === actionData.targetColor);
+                    const theirOrgan = targetT?.organs.find(o => o.color === actionData.targetColor);
                     if (myOrgan && theirOrgan) {
                         player.organs = player.organs.map(o => o === myOrgan ? theirOrgan : o);
                         targetT.organs = targetT.organs.map(o => o === theirOrgan ? myOrgan : o);
                         cardPlayed = true;
+                    } else {
+                        socket.emit('errorMessage', 'Selección inválida para trasplante.');
                     }
                     break;
+                    
                 case 'treatment_thief':
                     const targetThief = game.players.find(p => p.id === actionData.targetId);
+                    if (!targetThief) return socket.emit('errorMessage', 'Rival no encontrado.');
                     const organToSteal = targetThief.organs.find(o => o.color === actionData.targetColor);
-                    if (organToSteal && !player.organs.some(o => o.color === organToSteal.color) && player.organs.length < 4) {
-                        organToSteal.infected = false; 
-                        player.organs.push(organToSteal);
-                        targetThief.organs = targetThief.organs.filter(o => o !== organToSteal);
-                        cardPlayed = true;
-                    }
+                    if (!organToSteal) return socket.emit('errorMessage', 'El rival no tiene ese órgano.');
+                    if (player.organs.length >= 4) return socket.emit('errorMessage', 'Ya tienes 4 órganos, no puedes robar.');
+                    if (player.organs.some(o => o.color === organToSteal.color)) return socket.emit('errorMessage', 'Ya tienes un órgano de ese color, no puedes robarlo.');
+                    
+                    organToSteal.infected = false; 
+                    player.organs.push(organToSteal);
+                    targetThief.organs = targetThief.organs.filter(o => o !== organToSteal);
+                    cardPlayed = true;
                     break;
+
                 case 'treatment_contagion':
                     const myInfected = player.organs.find(o => o.color === actionData.myColor && o.infected);
                     const targetCont = game.players.find(p => p.id === actionData.targetId);
-                    const destOrgan = targetCont.organs.find(o => o.color === actionData.targetColor);
+                    const destOrgan = targetCont?.organs.find(o => o.color === actionData.targetColor);
                     if (myInfected && destOrgan) {
                         myInfected.infected = false;
-                        if (destOrgan.infected) {
-                            targetCont.organs = targetCont.organs.filter(o => o !== destOrgan);
-                        } else {
-                            destOrgan.infected = true;
-                        }
+                        if (destOrgan.infected) targetCont.organs = targetCont.organs.filter(o => o !== destOrgan);
+                        else destOrgan.infected = true;
                         cardPlayed = true;
+                    } else {
+                        socket.emit('errorMessage', 'No se pudo aplicar el contagio.');
                     }
                     break;
+
                 case 'treatment_latex':
                     game.players.forEach(p => {
                         if (p.id !== socket.id) {
                             p.hand = [];
-                            for(let i=0; i<3; i++) {
-                                if (game.deck.length > 0) p.hand.push(game.deck.pop());
-                            }
+                            for(let i=0; i<3; i++) if (game.deck.length > 0) p.hand.push(game.deck.pop());
                         }
                     });
                     cardPlayed = true;
                     break;
+
                 case 'treatment_medical_error':
                     const targetME = game.players.find(p => p.id === actionData.targetId);
                     if (targetME) {
@@ -195,6 +200,8 @@ io.on('connection', (socket) => {
                         player.organs = targetME.organs;
                         targetME.organs = tempOrgans;
                         cardPlayed = true;
+                    } else {
+                        socket.emit('errorMessage', 'Rival no encontrado.');
                     }
                     break;
             }
